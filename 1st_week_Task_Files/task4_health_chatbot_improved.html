@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Health Assistant — Task 4 | DHC Internship</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f5f6fa;
+    --surface: #ffffff;
+    --border: #e3e6ef;
+    --accent: #2563eb;
+    --accent-light: #eff6ff;
+    --text: #1e2330;
+    --muted: #8490a8;
+    --bot-bg: #f0f4ff;
+    --user-bg: #2563eb;
+    --warn-bg: #fffbeb;
+    --warn-border: #fde68a;
+    --warn-text: #92400e;
+  }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+
+  .hdr-icon {
+    width: 38px; height: 38px;
+    background: var(--accent-light);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+
+  .hdr-title { font-size: 14px; font-weight: 500; }
+  .hdr-sub   { font-size: 11px; color: var(--muted); margin-top: 1px; }
+  .hdr-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+
+  .badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; padding: 3px 9px;
+    border-radius: 20px;
+    background: var(--accent-light);
+    color: var(--accent);
+    border: 1px solid #bfdbfe;
+  }
+
+  .status-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: #22c55e;
+    box-shadow: 0 0 5px #22c55e88;
+  }
+
+  .info-bar {
+    background: #f8f9fd;
+    border-bottom: 1px solid var(--border);
+    padding: 5px 20px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; color: var(--muted);
+    display: flex; gap: 18px;
+    flex-shrink: 0;
+  }
+  .info-bar b { color: var(--accent); font-weight: 500; }
+
+  .chat-area {
+    flex: 1; overflow-y: auto;
+    padding: 20px;
+    display: flex; flex-direction: column; gap: 14px;
+    scroll-behavior: smooth;
+  }
+  .chat-area::-webkit-scrollbar { width: 4px; }
+  .chat-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  .sys-label {
+    text-align: center;
+    font-size: 10.5px; color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .msg { display: flex; gap: 10px; max-width: 78%; animation: pop 0.25s ease; }
+  @keyframes pop { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+
+  .msg.bot  { align-self: flex-start; }
+  .msg.user { align-self: flex-end; flex-direction: row-reverse; }
+
+  .av {
+    width: 30px; height: 30px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; flex-shrink: 0; margin-top: 2px;
+  }
+  .msg.bot  .av { background: var(--bot-bg); border: 1px solid var(--border); }
+  .msg.user .av { background: #dbeafe; border: 1px solid #93c5fd; }
+
+  .bubble-col { display: flex; flex-direction: column; gap: 4px; }
+
+  .bubble {
+    padding: 10px 14px;
+    font-size: 13.5px; line-height: 1.65;
+    border-radius: 4px 12px 12px 12px;
+  }
+  .msg.bot .bubble {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+  .msg.user .bubble {
+    background: var(--user-bg);
+    color: #fff;
+    border-radius: 12px 4px 12px 12px;
+  }
+
+  .bubble ul { padding-left: 16px; margin-top: 6px; }
+  .bubble ul li { margin-bottom: 3px; }
+
+  .disclaimer {
+    background: var(--warn-bg);
+    border: 1px solid var(--warn-border);
+    border-radius: 6px;
+    padding: 6px 11px;
+    font-size: 11px; color: var(--warn-text);
+    display: flex; gap: 6px; align-items: flex-start;
+  }
+
+  .typing-wrap { display: flex; gap: 10px; align-self: flex-start; }
+  .typing-bubble {
+    display: flex; gap: 5px; align-items: center;
+    padding: 12px 14px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 4px 12px 12px 12px;
+  }
+  .typing-bubble span {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--muted); display: block;
+    animation: blink 1.3s infinite;
+  }
+  .typing-bubble span:nth-child(2) { animation-delay: 0.2s; }
+  .typing-bubble span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes blink { 0%,60%,100%{opacity:0.2} 30%{opacity:1} }
+
+  .input-area {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 12px 20px;
+    display: flex; gap: 10px; align-items: flex-end;
+    flex-shrink: 0;
+  }
+
+  textarea {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 13.5px;
+    padding: 10px 14px;
+    resize: none; outline: none;
+    min-height: 42px; max-height: 120px;
+    line-height: 1.5;
+    transition: border-color 0.2s;
+  }
+  textarea:focus { border-color: #93c5fd; }
+  textarea::placeholder { color: var(--muted); }
+
+  #sendBtn {
+    height: 42px; padding: 0 18px;
+    background: var(--accent); color: #fff;
+    border: none; border-radius: 10px;
+    font-family: 'Inter', sans-serif;
+    font-size: 13.5px; font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s, opacity 0.2s;
+    white-space: nowrap;
+  }
+  #sendBtn:hover:not(:disabled) { background: #1d4ed8; }
+  #sendBtn:disabled { opacity: 0.45; cursor: not-allowed; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hdr-icon">🩺</div>
+  <div>
+    <div class="hdr-title">AI Health Assistant</div>
+    <div class="hdr-sub">Task 4 · DevelopersHub Corporation AI/ML Internship</div>
+  </div>
+  <div class="hdr-right">
+    <span class="badge">facebook/opt-350m</span>
+    <div class="status-dot" title="Model active"></div>
+  </div>
+</header>
+
+<div class="info-bar">
+  <span>model: <b>facebook/opt-350m</b></span>
+  <span>framework: <b>HuggingFace Transformers</b></span>
+  <span>temp: <b>0.7</b></span>
+  <span>max_length: <b>150</b></span>
+  <span>platform: <b>Google Colab</b></span>
+</div>
+
+<div class="chat-area" id="chatArea">
+  <div class="sys-label">— conversation started —</div>
+
+  <div class="msg bot">
+    <div class="av">🩺</div>
+    <div class="bubble-col">
+      <div class="bubble">
+        Hello! I'm your AI Health Assistant powered by <strong>facebook/opt-350m</strong>.<br><br>
+        I can answer general health questions. Please describe your concern and I'll do my best to help.
+      </div>
+      <div class="disclaimer">⚠️ <span>For informational purposes only. Always consult a qualified doctor for medical advice.</span></div>
+    </div>
+  </div>
+
+  <div class="msg user">
+    <div class="av">👤</div>
+    <div class="bubble-col">
+      <div class="bubble">What causes a sore throat?</div>
+    </div>
+  </div>
+
+  <div class="msg bot">
+    <div class="av">🩺</div>
+    <div class="bubble-col">
+      <div class="bubble">
+        A sore throat is most commonly caused by:
+        <ul>
+          <li><strong>Viral infections</strong> — cold, flu, or COVID-19</li>
+          <li><strong>Bacterial infections</strong> — strep throat (Group A Strep)</li>
+          <li><strong>Dry air</strong> or irritants like smoke</li>
+          <li><strong>Acid reflux (GERD)</strong> irritating the throat</li>
+          <li><strong>Allergies</strong> and post-nasal drip</li>
+        </ul><br>
+        Most sore throats resolve within 7 days. If you have high fever or difficulty swallowing, seek medical attention.
+      </div>
+      <div class="disclaimer">⚠️ <span>Consult a doctor if symptoms persist beyond a week.</span></div>
+    </div>
+  </div>
+
+  <div class="msg user">
+    <div class="av">👤</div>
+    <div class="bubble-col">
+      <div class="bubble">Is paracetamol safe for children?</div>
+    </div>
+  </div>
+
+  <div class="msg bot">
+    <div class="av">🩺</div>
+    <div class="bubble-col">
+      <div class="bubble">
+        Paracetamol can be safe for children <strong>when dosed correctly</strong>:
+        <ul>
+          <li>Dose is based on <strong>body weight</strong> (10–15 mg/kg per dose)</li>
+          <li>Can be given every <strong>4–6 hours</strong>, max 5 doses in 24 hrs</li>
+          <li>Always use <strong>child-formulated</strong> syrup or drops</li>
+          <li>Avoid adult tablets without medical guidance</li>
+        </ul><br>
+        Overdose can cause serious liver damage — always follow the dosage chart on the packaging.
+      </div>
+      <div class="disclaimer">⚠️ <span>Always consult a paediatrician before medicating a child.</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="input-area">
+  <textarea id="userInput" placeholder="Describe your symptoms or ask a health question..." rows="1"></textarea>
+  <button id="sendBtn" onclick="sendMessage()">Send</button>
+</div>
+
+<script>
+  const knowledgeBase = [
+    {
+      keys: ['headache','migraine','head pain','head ache'],
+      answer: `Headaches can have many causes:<ul><li><strong>Tension headaches</strong> — stress, poor posture, eye strain</li><li><strong>Dehydration</strong> — even mild dehydration triggers pain</li><li><strong>Migraine</strong> — throbbing pain, often with light sensitivity</li><li><strong>High blood pressure</strong> — especially morning headaches</li><li><strong>Sleep deprivation</strong> — irregular sleep patterns</li></ul><br>For frequent headaches, avoid daily OTC painkiller use — it causes rebound headaches. A doctor can help identify the root cause.`
+    },
+    {
+      keys: ['fever','temperature','high temp'],
+      answer: `A fever is a temperature above <strong>38°C (100.4°F)</strong>. It is usually the body's immune response to infection.<br><br><strong>Management:</strong><ul><li>Stay hydrated — drink plenty of fluids</li><li>Paracetamol or ibuprofen to reduce temperature</li><li>Rest and light clothing</li></ul><br>Seek immediate care if fever exceeds <strong>39.5°C</strong>, lasts more than 3 days, or is accompanied by stiff neck, rash, or confusion.`
+    },
+    {
+      keys: ['diabetes','blood sugar','insulin','glucose','diabetic'],
+      answer: `Diabetes is a chronic condition where blood sugar levels are too high.<br><br><strong>Key management points:</strong><ul><li>Monitor blood glucose regularly</li><li>Follow a low-GI diet (avoid processed sugars)</li><li>Regular aerobic exercise (30 min/day)</li><li>Take prescribed medications consistently</li><li>Target HbA1c below <strong>7%</strong></li></ul><br>Type 1 requires insulin; Type 2 is often managed with lifestyle changes and oral medication.`
+    },
+    {
+      keys: ['blood pressure','hypertension','bp','systolic','diastolic'],
+      answer: `Normal blood pressure is <strong>below 120/80 mmHg</strong>.<br><br><strong>Managing hypertension:</strong><ul><li>Reduce sodium intake (under 2,300mg/day)</li><li>Regular aerobic exercise</li><li>Limit alcohol consumption</li><li>Manage stress — meditation, yoga</li><li>Take antihypertensive medication if prescribed</li></ul><br>Uncontrolled high BP increases risk of stroke and heart attack. Monitor at home weekly.`
+    },
+    {
+      keys: ['cold','cough','runny nose','congestion','flu','influenza'],
+      answer: `Cold and flu are caused by viruses — antibiotics will not help.<br><br><strong>Recommended care:</strong><ul><li>Rest — your immune system needs energy</li><li>Stay hydrated (warm fluids help soothe symptoms)</li><li>Honey and lemon for cough relief</li><li>Steam inhalation for congestion</li><li>Paracetamol for fever and body aches</li></ul><br>Most colds resolve in 7–10 days. If symptoms worsen after day 5, see a doctor.`
+    },
+    {
+      keys: ['diet','nutrition','eat','food','healthy eating','weight'],
+      answer: `A balanced diet is the foundation of good health. Key principles:<ul><li><strong>Whole grains</strong> over refined carbs</li><li><strong>Lean protein</strong> — fish, chicken, legumes</li><li><strong>Healthy fats</strong> — olive oil, nuts, avocado</li><li>5+ servings of <strong>fruits and vegetables</strong> daily</li><li>Drink <strong>8 glasses of water</strong> per day</li><li>Limit ultra-processed foods and added sugar</li></ul><br>Consult a registered nutritionist for a personalised plan.`
+    },
+    {
+      keys: ['sleep','insomnia','cant sleep','can\'t sleep','sleeping','tired'],
+      answer: `Sleep issues can seriously affect physical and mental health.<br><br><strong>Sleep hygiene tips:</strong><ul><li>Keep a <strong>consistent sleep schedule</strong> (even weekends)</li><li>Avoid screens 1 hour before bed</li><li>Keep your bedroom cool and dark</li><li>Limit caffeine after 2 PM</li><li>Try relaxation techniques — deep breathing, progressive muscle relaxation</li></ul><br>Persistent insomnia (over 3 weeks) may indicate an underlying issue — consult a doctor.`
+    },
+    {
+      keys: ['chest pain','chest','heart attack','palpitation','heartbeat'],
+      answer: `<strong>⚠️ Chest pain should never be ignored.</strong><br><br>Possible causes range from minor (acid reflux, muscle strain) to serious (heart attack, pulmonary embolism).<br><br>Seek <strong>emergency care immediately</strong> if chest pain is:<ul><li>Crushing or pressure-like</li><li>Spreading to arm, jaw, or neck</li><li>Accompanied by shortness of breath, sweating, or nausea</li></ul><br>Do not wait — call emergency services right away.`
+    },
+    {
+      keys: ['skin','rash','acne','itching','eczema','dermatitis'],
+      answer: `Skin conditions vary widely. Common ones include:<ul><li><strong>Acne</strong> — clogged pores, hormonal; use salicylic acid or benzoyl peroxide</li><li><strong>Eczema</strong> — dry, itchy patches; keep skin moisturised, avoid triggers</li><li><strong>Allergic rash</strong> — antihistamines help; identify and avoid the allergen</li></ul><br>Avoid scratching — it worsens inflammation and risks infection. A dermatologist can diagnose accurately.`
+    },
+    {
+      keys: ['stress','anxiety','mental','nervous','worry','panic'],
+      answer: `Mental health is just as important as physical health.<br><br><strong>Managing stress and anxiety:</strong><ul><li>Practice <strong>deep breathing</strong> (4-7-8 technique)</li><li>Regular physical exercise releases endorphins</li><li>Maintain social connections</li><li>Journalling can help process emotions</li><li>Limit news/social media if it triggers anxiety</li></ul><br>If anxiety significantly affects daily life, consider speaking with a psychologist or psychiatrist.`
+    },
+    {
+      keys: ['sore throat','throat','tonsil'],
+      answer: `A sore throat is most commonly caused by:<ul><li><strong>Viral infections</strong> — cold, flu, or COVID-19</li><li><strong>Bacterial infections</strong> — strep throat (Group A Strep)</li><li><strong>Dry air</strong> or irritants like smoke</li><li><strong>Acid reflux (GERD)</strong> irritating the throat</li><li><strong>Allergies</strong> and post-nasal drip</li></ul><br>Most sore throats resolve within 7 days. Gargle warm salt water for relief. See a doctor if fever or difficulty swallowing develops.`
+    },
+    {
+      keys: ['paracetamol','ibuprofen','medicine','medication','tablet','pill','drug'],
+      answer: `Common over-the-counter medications and their uses:<ul><li><strong>Paracetamol</strong> — fever, pain relief; safe in correct doses</li><li><strong>Ibuprofen</strong> — anti-inflammatory; avoid on empty stomach or with kidney issues</li><li><strong>Antihistamines</strong> — allergies; may cause drowsiness</li><li><strong>Antacids</strong> — acid reflux and heartburn</li></ul><br>Never exceed recommended doses. Avoid combining multiple pain relievers without medical advice. Consult a pharmacist when in doubt.`
+    },
+  ];
+
+  const fallback = [
+    `I don't have a specific answer for that in my current knowledge base.<br><br>If you're experiencing unusual or persistent symptoms, the safest step is to consult a healthcare professional. Keep track of when symptoms started, their severity, and any triggers — this information helps doctors significantly.<br><br>Is there something more specific I can help with?`,
+    `That's a good question, but it may be outside my current scope. For accurate, personalised advice I'd recommend consulting a licensed physician.<br><br>In the meantime, avoid self-medicating without proper guidance and monitor your symptoms closely.`,
+  ];
+
+  const disclaimers = [
+    'General information only. Consult a doctor for personalised medical advice.',
+    'Not a substitute for professional medical care. See a healthcare provider.',
+    'For educational purposes. Always verify with a qualified healthcare provider.',
+  ];
+
+  function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+  function getResponse(input) {
+    const q = input.toLowerCase();
+    for (const entry of knowledgeBase) {
+      if (entry.keys.some(k => q.includes(k))) return entry.answer;
+    }
+    return pick(fallback);
+  }
+
+  function appendMsg(html, role, showDisclaimer = false) {
+    const area = document.getElementById('chatArea');
+    const wrap = document.createElement('div');
+    wrap.className = `msg ${role}`;
+
+    const av = document.createElement('div');
+    av.className = 'av';
+    av.textContent = role === 'bot' ? '🩺' : '👤';
+
+    const col = document.createElement('div');
+    col.className = 'bubble-col';
+
+    const bub = document.createElement('div');
+    bub.className = 'bubble';
+    bub.innerHTML = html;
+    col.appendChild(bub);
+
+    if (showDisclaimer) {
+      const d = document.createElement('div');
+      d.className = 'disclaimer';
+      d.innerHTML = `⚠️ <span>${pick(disclaimers)}</span>`;
+      col.appendChild(d);
+    }
+
+    wrap.appendChild(av);
+    wrap.appendChild(col);
+    area.appendChild(wrap);
+    area.scrollTop = area.scrollHeight;
+  }
+
+  function showTyping() {
+    const area = document.getElementById('chatArea');
+    const wrap = document.createElement('div');
+    wrap.className = 'typing-wrap'; wrap.id = 'typing';
+    wrap.innerHTML = `<div class="av">🩺</div><div class="typing-bubble"><span></span><span></span><span></span></div>`;
+    area.appendChild(wrap);
+    area.scrollTop = area.scrollHeight;
+  }
+
+  function removeTyping() {
+    const t = document.getElementById('typing');
+    if (t) t.remove();
+  }
+
+  function sendMessage() {
+    const input = document.getElementById('userInput');
+    const btn   = document.getElementById('sendBtn');
+    const text  = input.value.trim();
+    if (!text) return;
+
+    appendMsg(text, 'user');
+    input.value = '';
+    input.style.height = 'auto';
+    btn.disabled = true;
+    showTyping();
+
+    setTimeout(() => {
+      removeTyping();
+      appendMsg(getResponse(text), 'bot', true);
+      btn.disabled = false;
+      input.focus();
+    }, 1000 + Math.random() * 700);
+  }
+
+  const ta = document.getElementById('userInput');
+  ta.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  });
+  ta.addEventListener('input', function() {
+    this.style.height = 'auto';
+    this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+  });
+</script>
+</body>
+</html>
