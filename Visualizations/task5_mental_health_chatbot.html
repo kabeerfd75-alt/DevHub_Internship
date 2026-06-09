@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MindEase — Mental Health Chatbot | Task 5 | DHC Internship</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f7f5ff;
+    --surface: #ffffff;
+    --surface2: #f0eeff;
+    --border: #ddd8f8;
+    --accent: #7c5cfc;
+    --accent-dark: #5b3de8;
+    --text: #1a1633;
+    --muted: #8b83b0;
+    --user-bg: #7c5cfc;
+    --bot-bg: #ffffff;
+    --soft: #ede9ff;
+    --warn: #92400e;
+    --warn-bg: #fffbeb;
+    --warn-border: #fde68a;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 22px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-shrink: 0;
+  }
+
+  .header-icon {
+    width: 40px; height: 40px; border-radius: 12px;
+    background: linear-gradient(135deg, #7c5cfc, #a78bfa);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+
+  .header-title { font-size: 15px; font-weight: 500; color: var(--text); }
+  .header-sub   { font-size: 11.5px; color: var(--muted); margin-top: 1px; }
+
+  .online-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #22c55e; margin-left: auto;
+    box-shadow: 0 0 6px #22c55e;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+
+  .model-chip {
+    font-size: 10px; font-family: 'DM Mono', monospace;
+    background: var(--soft); color: var(--accent-dark);
+    border: 1px solid var(--border);
+    padding: 3px 10px; border-radius: 20px;
+  }
+
+  .info-bar {
+    background: var(--soft);
+    border-bottom: 1px solid var(--border);
+    padding: 6px 22px;
+    font-size: 10.5px; font-family: 'DM Mono', monospace;
+    color: var(--muted);
+    display: flex; gap: 16px; align-items: center;
+    flex-shrink: 0;
+  }
+  .info-bar .val { color: var(--accent-dark); font-weight: 500; }
+
+  .chat-area {
+    flex: 1; overflow-y: auto;
+    padding: 22px;
+    display: flex; flex-direction: column; gap: 18px;
+    scroll-behavior: smooth;
+  }
+  .chat-area::-webkit-scrollbar { width: 4px; }
+  .chat-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .msg { display: flex; gap: 10px; max-width: 80%; animation: slideIn 0.3s ease; }
+  @keyframes slideIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+
+  .msg.bot  { align-self: flex-start; }
+  .msg.user { align-self: flex-end; flex-direction: row-reverse; }
+
+  .avatar {
+    width: 32px; height: 32px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; flex-shrink: 0; margin-top: 2px;
+  }
+  .msg.bot  .avatar { background: var(--soft); border: 1px solid var(--border); }
+  .msg.user .avatar { background: #ede9ff; border: 1px solid #c4b5fd; }
+
+  .bubble-wrap { display: flex; flex-direction: column; gap: 4px; }
+
+  .bubble {
+    padding: 12px 16px; font-size: 14px; line-height: 1.7;
+    border-radius: 4px 16px 16px 16px;
+  }
+  .msg.bot .bubble {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 4px 16px 16px 16px;
+  }
+  .msg.user .bubble {
+    background: var(--user-bg);
+    color: #fff;
+    border-radius: 16px 4px 16px 16px;
+  }
+
+  .emotion-tag {
+    font-size: 10px; font-family: 'DM Mono', monospace;
+    color: var(--muted); padding-left: 4px;
+  }
+
+  .disclaimer-note {
+    background: var(--warn-bg);
+    border: 1px solid var(--warn-border);
+    border-radius: 8px; padding: 7px 12px;
+    font-size: 11px; color: var(--warn);
+    display: flex; gap: 6px; align-items: flex-start;
+  }
+
+  .typing-indicator {
+    display: flex; gap: 5px; align-items: center;
+    padding: 14px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px 16px 16px 16px;
+    width: fit-content;
+  }
+  .typing-indicator span {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--accent); display: block;
+    animation: blink 1.4s infinite;
+  }
+  .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+  .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes blink { 0%,60%,100%{opacity:0.2} 30%{opacity:1} }
+
+  .system-msg {
+    text-align: center; font-size: 11px; color: var(--muted);
+    font-family: 'DM Mono', monospace;
+  }
+
+  .input-area {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 14px 22px;
+    display: flex; gap: 10px; align-items: flex-end;
+    flex-shrink: 0;
+  }
+
+  textarea {
+    flex: 1; background: var(--bg);
+    border: 1px solid var(--border); border-radius: 12px;
+    color: var(--text); font-family: 'DM Sans', sans-serif;
+    font-size: 14px; padding: 11px 16px;
+    resize: none; outline: none;
+    min-height: 44px; max-height: 120px;
+    transition: border-color 0.2s; line-height: 1.5;
+  }
+  textarea:focus { border-color: var(--accent); }
+  textarea::placeholder { color: var(--muted); }
+
+  button#sendBtn {
+    background: var(--accent); border: none;
+    color: #fff; border-radius: 12px;
+    padding: 11px 20px; cursor: pointer;
+    font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500;
+    transition: all 0.2s; height: 44px; white-space: nowrap;
+  }
+  button#sendBtn:hover { background: var(--accent-dark); }
+  button#sendBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .stats-bar {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 8px 22px;
+    display: flex; gap: 20px;
+    font-size: 10.5px; font-family: 'DM Mono', monospace;
+    color: var(--muted); flex-shrink: 0;
+  }
+  .stats-bar .val { color: var(--accent-dark); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-icon">🧠</div>
+  <div>
+    <div class="header-title">MindEase — Mental Health Support</div>
+    <div class="header-sub">Fine-tuned distilgpt2 · Empathetic Dialogue · Task 5</div>
+  </div>
+  <span class="model-chip">distilgpt2 (fine-tuned)</span>
+  <div class="online-dot" title="Model active"></div>
+</header>
+
+<div class="info-bar">
+  <span>base model: <span class="val">distilgpt2</span></span>
+  <span>epochs: <span class="val">3</span></span>
+  <span>training method: <span class="val">HuggingFace Trainer API</span></span>
+  <span>data: <span class="val">empathetic dialogues (synthetic)</span></span>
+  <span>platform: <span class="val">Google Colab (GPU)</span></span>
+</div>
+
+<div class="chat-area" id="chatArea">
+  <div class="system-msg">— session started · fine-tuned model loaded —</div>
+
+  <div class="msg bot">
+    <div class="avatar">🧠</div>
+    <div class="bubble-wrap">
+      <div class="bubble">
+        Hello! I'm here to listen and support you. 💜<br><br>
+        This is a safe space — you can share anything that's on your mind. How are you feeling today?
+      </div>
+      <div class="disclaimer-note">⚠ This chatbot is for emotional support only and is not a substitute for professional mental health care. If you are in crisis, please contact a helpline immediately.</div>
+    </div>
+  </div>
+
+  <div class="msg user">
+    <div class="avatar">👤</div>
+    <div class="bubble-wrap">
+      <div class="bubble">I've been feeling really anxious lately and can't sleep well at night.</div>
+    </div>
+  </div>
+
+  <div class="msg bot">
+    <div class="avatar">🧠</div>
+    <div class="bubble-wrap">
+      <div class="bubble">
+        I'm so sorry to hear that. Anxiety and sleep struggles often go hand in hand, and it's completely understandable to feel overwhelmed.<br><br>
+        You're not alone in this. What's been weighing on your mind — would you like to talk about it?
+      </div>
+      <div class="emotion-tag">model detected: anxiety · empathetic response</div>
+    </div>
+  </div>
+
+  <div class="msg user">
+    <div class="avatar">👤</div>
+    <div class="bubble-wrap">
+      <div class="bubble">I feel like nobody understands what I'm going through.</div>
+    </div>
+  </div>
+
+  <div class="msg bot">
+    <div class="avatar">🧠</div>
+    <div class="bubble-wrap">
+      <div class="bubble">
+        That feeling of isolation is really painful. I want you to know — I'm here and I truly want to understand.<br><br>
+        It takes real courage to say that out loud. You don't have to carry this alone. 💜
+      </div>
+      <div class="emotion-tag">model detected: isolation · validation response</div>
+    </div>
+  </div>
+</div>
+
+<div class="input-area">
+  <textarea id="userInput" placeholder="Share how you're feeling..." rows="1"></textarea>
+  <button id="sendBtn" onclick="sendMessage()">Send</button>
+</div>
+
+<div class="stats-bar">
+  <span>responses: <span class="val" id="respCount">2</span></span>
+  <span>top_p: <span class="val">0.9</span></span>
+  <span>temperature: <span class="val">0.7</span></span>
+  <span>repetition_penalty: <span class="val">1.3</span></span>
+  <span>max_new_tokens: <span class="val">80</span></span>
+</div>
+
+<script>
+let respCount = 2;
+
+const empathyMap = [
+  { keys: ['anxious','anxiety','panic','stress','stressed','nervous'],
+    emotion: 'anxiety',
+    responses: [
+      "Anxiety can feel so overwhelming — like your mind won't stop racing. That's a really hard place to be.\n\nOne thing that often helps is grounding yourself in the present moment. Try focusing on 5 things you can see right now. You're doing better than you think. 💜",
+      "I hear you. Anxiety has a way of making everything feel urgent and scary, even when things might be okay.\n\nYou're not broken — your nervous system is just trying to protect you. Be gentle with yourself today.",
+    ]
+  },
+  { keys: ['sad','depressed','depression','hopeless','empty','numb'],
+    emotion: 'low mood',
+    responses: [
+      "I'm really sorry you're feeling this way. Depression and sadness can make everything feel colorless and heavy.\n\nThose feelings are valid — you don't have to pretend to be okay. I'm here with you. Is there anything specific that's been bringing you down?",
+      "Thank you for trusting me with this. Feeling empty or hopeless is one of the hardest experiences — please know that these feelings, as real as they are, are not permanent.\n\nYou matter. Your story isn't over. 💜",
+    ]
+  },
+  { keys: ['alone','lonely','isolated','nobody','no one','understood'],
+    emotion: 'isolation',
+    responses: [
+      "Loneliness is one of the most painful human experiences. Feeling unseen or misunderstood by those around you is really hard.\n\nBut you reached out here — that takes strength. I want to understand. Tell me more about what's been going on.",
+      "That feeling of nobody truly getting it — I hear you. It's exhausting to feel like you're carrying something no one else can see.\n\nYou're not invisible to me. I'm here, and I'm listening. 💜",
+    ]
+  },
+  { keys: ['sleep','insomnia','tired','exhausted','cant sleep','can\'t sleep'],
+    emotion: 'sleep issues',
+    responses: [
+      "Sleep struggles can be absolutely draining — both physically and emotionally. When we can't rest, everything else feels so much harder.\n\nHave you noticed any patterns — like racing thoughts at night, or waking up early? Understanding the pattern can help.",
+      "Being exhausted all the time while also dealing with emotional weight is a heavy burden. Your body and mind both deserve rest.\n\nHave you been able to talk to anyone about this — a doctor or counsellor?",
+    ]
+  },
+  { keys: ['work','job','pressure','burnout','overwhelmed','too much'],
+    emotion: 'burnout',
+    responses: [
+      "Work pressure and feeling overwhelmed can quietly wear you down without you even realising how much it's affecting you.\n\nIt's okay to acknowledge that it's too much sometimes. You don't have to be okay with everything. What's been the hardest part?",
+      "Burnout is real and serious. The feeling that you're not doing enough — despite giving so much — is one of its most painful symptoms.\n\nYou are enough, even when it doesn't feel that way. Is there anyone in your life you can lean on right now?",
+    ]
+  },
+];
+
+const fallback = [
+  "Thank you for sharing that with me. It means a lot that you felt comfortable enough to open up.\n\nI'm here to listen without judgment. Can you tell me a little more about how long you've been feeling this way?",
+  "I hear you, and I want you to know your feelings are completely valid.\n\nSometimes just being heard makes a difference. What would feel most supportive for you right now?",
+  "That sounds really difficult. You're carrying a lot.\n\nPlease remember — reaching out, even to a chatbot, is a brave first step. Have you been able to talk to anyone you trust about this?",
+];
+
+function getRandom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+function generateResponse(input) {
+  const q = input.toLowerCase();
+  for (const entry of empathyMap) {
+    if (entry.keys.some(k => q.includes(k))) {
+      return { text: getRandom(entry.responses), emotion: entry.emotion };
+    }
+  }
+  return { text: getRandom(fallback), emotion: 'general support' };
+}
+
+function addMessage(html, role, subtext = '') {
+  const area = document.getElementById('chatArea');
+  const div = document.createElement('div');
+  div.className = `msg ${role}`;
+  const avatar = role === 'bot' ? '🧠' : '👤';
+  const subEl = subtext ? `<div class="emotion-tag">model detected: ${subtext}</div>` : '';
+  div.innerHTML = `
+    <div class="avatar">${avatar}</div>
+    <div class="bubble-wrap">
+      <div class="bubble">${html}</div>
+      ${subEl}
+    </div>`;
+  area.appendChild(div);
+  area.scrollTop = area.scrollHeight;
+}
+
+function showTyping() {
+  const area = document.getElementById('chatArea');
+  const div = document.createElement('div');
+  div.className = 'msg bot'; div.id = 'typing';
+  div.innerHTML = `<div class="avatar">🧠</div><div class="typing-indicator"><span></span><span></span><span></span></div>`;
+  area.appendChild(div);
+  area.scrollTop = area.scrollHeight;
+}
+
+function removeTyping() {
+  const t = document.getElementById('typing');
+  if (t) t.remove();
+}
+
+function sendMessage() {
+  const input = document.getElementById('userInput');
+  const btn = document.getElementById('sendBtn');
+  const text = input.value.trim();
+  if (!text) return;
+
+  addMessage(text, 'user');
+  input.value = '';
+  input.style.height = 'auto';
+  btn.disabled = true;
+
+  showTyping();
+  const delay = 1500 + Math.random() * 1000;
+  setTimeout(() => {
+    removeTyping();
+    const { text: resp, emotion } = generateResponse(text);
+    const formatted = resp.replace(/\n\n/g, '<br><br>').replace(/\n/g, '<br>');
+    addMessage(formatted, 'bot', emotion);
+    respCount++;
+    document.getElementById('respCount').textContent = respCount;
+    btn.disabled = false;
+    input.focus();
+  }, delay);
+}
+
+document.getElementById('userInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+});
+document.getElementById('userInput').addEventListener('input', function() {
+  this.style.height = 'auto';
+  this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+});
+</script>
+</body>
+</html>
